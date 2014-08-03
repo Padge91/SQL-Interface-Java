@@ -339,6 +339,7 @@ public class MainFrame extends JFrame implements ActionListener, MouseListener{
 	//-------------------------------------------------------------------
 	
 	//method to convert ResultSet to table
+	//Method from StackOverflow user Paul Vargas: original code from "http://stackoverflow.com/questions/10620448/most-simple-code-to-populate-jtable-from-resultset"
 	private static DefaultTableModel buildTableModel(ResultSet rs)
 	        throws SQLException {
 
