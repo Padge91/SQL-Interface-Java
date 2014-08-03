@@ -8,6 +8,9 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 
 
+//test connection string is jdbc:hsqldb:file:/Users/nicholaspadgett/Desktop/untitled folder/New Database1
+
+
 @SuppressWarnings("serial")
 public class MainFrame extends JFrame implements ActionListener, MouseListener{
 	
@@ -65,9 +68,9 @@ public class MainFrame extends JFrame implements ActionListener, MouseListener{
 	private JPanel parentPanel;
 	private Dimension parentDimension;
 	
-	//list just for testing
-	private Object[] testlist1 = {"Test1", "test2", "test3"};
-	
+	//list for comparing
+	Object[] whereStrings = {"=", "<=", ">="};
+		
 	//default constructor
 	public MainFrame() {
 		
@@ -89,11 +92,12 @@ public class MainFrame extends JFrame implements ActionListener, MouseListener{
 		connectButton.addActionListener(this);
 		
 		fromLabel = new JLabel("From: ");
-		fromList = new JList(testlist1);
+		fromList = new JList();
+		fromList.addMouseListener(this);
 		
 		fromListScroll = new JScrollPane(fromList, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		selectLabel = new JLabel("Select: ");
-		selectList = new JList(testlist1);
+		selectList = new JList();
 		selectListScroll = new JScrollPane(selectList, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		
 		//add components to panel1
@@ -114,8 +118,8 @@ public class MainFrame extends JFrame implements ActionListener, MouseListener{
 		panel2.setLayout(vBox2);
 		
 		whereLabel = new JLabel("Where: ");
-		where1 = new JComboBox(testlist1);
-		where2 = new JComboBox(testlist1);
+		where1 = new JComboBox();
+		where2 = new JComboBox(whereStrings);
 		where3 = new JTextField();
 		
 		//add components to panel2
@@ -199,14 +203,14 @@ public class MainFrame extends JFrame implements ActionListener, MouseListener{
 		conn = connection;
 		ResultSet rs;
 		
-		//broken here? ResultSet seems to contain many 'SYSTEM_*' contents instead of table names
 		try {
 			DatabaseMetaData md = conn.getMetaData();
 			rs = md.getTables(null, null, "%", null);
 		
 			while (rs.next()) {
-				tableNames.add(rs.getString(3));
-				System.out.println(rs.getString(3));
+				if (!rs.getString(3).startsWith("SYSTEM")) {
+					tableNames.add(rs.getString(3));
+				}
 			}
 		
 		}
@@ -227,9 +231,9 @@ public class MainFrame extends JFrame implements ActionListener, MouseListener{
 		ResultSet set = null;
 		String str;
 		str = s;
-		String fromStatement = "FROM ";
+		String fromStatement = " FROM ";
 		String selectStatement = "SELECT ";
-		String whereStatement = "WHERE ";
+		String whereStatement = " WHERE ";
 		boolean first = false;
 		boolean first2 = false;
 		
@@ -276,7 +280,7 @@ public class MainFrame extends JFrame implements ActionListener, MouseListener{
 			
 			
 			//get the wheres
-			if (where1.getSelectedIndex() != -1){
+			if (where1.getSelectedIndex() != 0){
 				whereStatement += where1.getSelectedItem().toString();
 				
 				if (where2.getSelectedIndex() == -1) {
@@ -290,9 +294,11 @@ public class MainFrame extends JFrame implements ActionListener, MouseListener{
 					return;
 				}
 				whereStatement += where3.getText();
+				str = selectStatement + fromStatement + whereStatement + ";";
 			}
-			
-			str = selectStatement + fromStatement + whereStatement + ";";
+			else {
+				str = selectStatement + fromStatement + ";";
+			}
 		}
 		
 		//create the statement and execute it
@@ -390,34 +396,43 @@ public class MainFrame extends JFrame implements ActionListener, MouseListener{
 		if (me.getSource() == fromList) {
 			//get columns from selected tables
 			int[] selectedInd = fromList.getSelectedIndices();
-			String[] selectedTables = new String[selectedInd.length];
-			ArrayList<String> columns = new ArrayList<String>();
 			
-			for (int i = 0; i < selectedInd.length; i++){
-				selectedTables[i] = fromList.getModel().getElementAt(i).toString();
+			if (selectedInd.length == 0) {
+				where1.setModel(new DefaultComboBoxModel());
+				selectList.setModel(new DefaultComboBoxModel());
+				panel1.repaint();
+				panel2.repaint();
 			}
+			else {
+				String[] selectedTables = new String[selectedInd.length];
+				ArrayList<String> columns = new ArrayList<String>();
 			
-			columns.add("ALL");
-			
-			//get columns from one table at a time
-			for (int i = 0; i < selectedInd.length; i++) {
-				try {
-					DatabaseMetaData dbmd = conn.getMetaData();
-					ResultSet rs = dbmd.getColumns(null, null, selectedTables[i], null);
-					
-					while (rs.next()) {
-						columns.add(selectedTables[i] + "." + rs.getString(1));
-					}
-					
-				} catch (Exception e) {
-					System.out.println("Error when getting metaData in mouseClocked event");
+				for (int i = 0; i < selectedInd.length; i++){
+					selectedTables[i] = fromList.getModel().getElementAt(selectedInd[i]).toString();
 				}
-			}
+				
+				columns.add("ALL");
 			
-			where1.setModel(new DefaultComboBoxModel(columns.toArray()));
-			selectList.setModel(new DefaultComboBoxModel(columns.toArray()));
-			panel1.repaint();
-			panel2.repaint();
+				//get columns from one table at a time
+				for (int i = 0; i < selectedInd.length; i++) {
+					try {
+						DatabaseMetaData dbmd = conn.getMetaData();
+						ResultSet rs = dbmd.getColumns(null, null, selectedTables[i], null);
+					
+						while (rs.next()) {
+							columns.add(selectedTables[i] + "." + rs.getString(4));
+						}
+					
+					} catch (Exception e) {
+						System.out.println("Error when getting metaData in mouseClicked event");
+					}
+				}
+			
+				where1.setModel(new DefaultComboBoxModel(columns.toArray()));
+				selectList.setModel(new DefaultComboBoxModel(columns.toArray()));
+				panel1.repaint();
+				panel2.repaint();
+			}
 		}
 	}
 
