@@ -62,6 +62,7 @@ public class MainFrame extends JFrame implements ActionListener, MouseListener{
 	private JButton customQueryButton;
 	private JButton printButton;
 	private JButton exportButton;
+	private JButton exitButton;
 	
 	//parent panel
 	private BoxLayout verticalLayout;
@@ -161,12 +162,15 @@ public class MainFrame extends JFrame implements ActionListener, MouseListener{
 		printButton.addActionListener(this);
 		exportButton = new JButton("Export");
 		exportButton.addActionListener(this);
+		exitButton = new JButton("Exit");
+		exitButton.addActionListener(this);
 		
 		//add components to panel4
 		panel4.add(goButton);
 		panel4.add(customQueryButton);
 		panel4.add(printButton);
 		panel4.add(exportButton);
+		panel4.add(exitButton);
 		
 		//set dimensions for panel4
 		d4 = new Dimension(600, 60);
@@ -387,6 +391,14 @@ public class MainFrame extends JFrame implements ActionListener, MouseListener{
 		}
 		else if (e.getSource() == exportButton) {
 			//export prompt
+		}
+		else if (e.getSource() == exitButton) {
+			try {
+				conn.close();
+			} catch (Exception e1) {
+				JOptionPane.showMessageDialog(this, "Error in closing connection.");
+			}
+			this.dispose();
 		}
 	}
 	
